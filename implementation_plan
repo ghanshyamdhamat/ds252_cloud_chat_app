@@ -1,0 +1,131 @@
+Implementation Plan: Cloud Chat (Self-Hosted on Azure VM)
+
+Author: Gemini
+Date: September 8, 2025
+Version: 1.3
+Related Document: Product Requirements Document: Cloud Chat (v1.0)
+1. Overview
+
+This document outlines the phased implementation strategy for the Cloud Chat application, following a local-first development model. The entire application will first be built and tested in a local containerized environment. Once proven, it will be deployed to a self-hosted architecture on a single Azure Virtual Machine (VM). This approach maximizes development speed and minimizes cloud dependency during the build phase.
+2. Guiding Principles & Technology Stack
+
+    Local-First Development: The application must be fully functional on a local machine using Docker before any cloud deployment is attempted.
+
+    Containerization: Docker and Docker Compose are central to this strategy, ensuring a consistent environment for both local development and production deployment.
+
+    Azure Resource: A single Azure VM (e.g., B1s burstable series) will serve as the production environment.
+
+    Self-Hosted Stack:
+
+        Web Server: NGINX
+
+        Database: MongoDB Community Edition
+
+        Backend API: Node.js with Express.js
+
+        Real-time Functionality: Socket.IO
+
+        Authentication: Keycloak
+
+    CI/CD: A GitHub Actions workflow will automate deployment from the repository to the production VM.
+
+3. Development Phases
+Phase 1: Local Environment Setup & Scaffolding (Sprint 1)
+
+This phase is focused entirely on creating a reproducible local development environment. No cloud resources are needed yet.
+
+    Task 1.1: Project Scaffolding:
+
+        Initialize the React.js frontend and Node.js/Express backend projects.
+
+    Task 1.2: Containerization:
+
+        Create a Dockerfile for the Node.js application.
+
+        Create a comprehensive docker-compose.yml file to define and link all services for local execution: NGINX, the Node.js App, MongoDB, and Keycloak.
+
+    Task 1.3: Local Service Configuration:
+
+        Configure NGINX to serve the React app and act as a reverse proxy for the backend services.
+
+        Run all services locally using a single command: docker-compose up.
+
+        Perform the initial Keycloak setup on the local instance (create realm, client, etc.).
+
+Phase 2: Local MVP Feature Development (Sprint 2-3)
+
+Build and test all core application features using the local Docker environment.
+
+    Task 2.1: API & Database Development:
+
+        Develop all Express API endpoints (user search, message history).
+
+        Connect the Node.js app to the local MongoDB container.
+
+    Task 2.2: Authentication Integration:
+
+        Integrate the React frontend with the local Keycloak instance.
+
+        Secure the Express API endpoints to validate tokens issued by the local Keycloak.
+
+    Task 2.3: Real-time Messaging Implementation:
+
+        Integrate Socket.IO into the Express server and the React client.
+
+        Develop and test real-time messaging, ensuring messages are saved to the local MongoDB instance.
+
+    Task 2.4: Full Local Testing:
+
+        Verify that all features (login, search, chat, history) are working correctly together within the local Docker environment.
+
+Phase 3: Cloud Provisioning & Initial Deployment (Sprint 4)
+
+With a working local application, the focus now shifts to preparing the production environment.
+
+    Task 3.1: Azure VM Provisioning:
+
+        Create a resource group and provision a Linux-based Azure VM.
+
+        Configure the Network Security Group (NSG) to open ports 80 (HTTP) and 443 (HTTPS).
+
+    Task 3.2: Server Environment Setup:
+
+        Install Docker and Docker Compose on the newly provisioned VM.
+
+    Task 3.3: Manual Initial Deployment:
+
+        Securely copy the docker-compose.yml file to the VM.
+
+        Manually pull the required public images (MongoDB, Keycloak, NGINX) and run the containers to ensure the environment is set up correctly.
+
+Phase 4: CI/CD Automation (Parallel Task)
+
+Automate the deployment process from development to production.
+
+    Task 4.1: Setup GitHub Repository:
+
+        Initialize the Git repository and push the project code.
+
+    Task 4.2: Create CI/CD Workflow with GitHub Actions:
+
+        Create a workflow that triggers on a push to the main branch.
+
+        Job 1: Build & Push Docker Image: Build the production-ready Docker image for the Node.js app and push it to a container registry (e.g., Docker Hub).
+
+        Job 2: Deploy to VM: Use SSH to securely connect to the Azure VM, pull the latest application image, and restart the services using docker-compose.
+
+Phase 5: Post-Deployment Enhancements (Sprint 5+)
+
+    Task 5.1: User Presence (Online Status):
+
+        Develop and test the feature locally first, then deploy using the established CI/CD pipeline.
+
+    Task 5.2: UI/UX Refinements:
+
+        Improve styling and error handling locally, then deploy.
+
+4. Development Workflow
+
+The updated workflow emphasizes local validation before any code is merged and deployed.
+
+    Assign Task -> Create Branch -> Develop & Test Locally using Docker Compose -> Commit & Push -> Open Pull Request -> Automated Checks & Code Review -> Merge -> Automated Deployment via GitHub Actions to VM.
